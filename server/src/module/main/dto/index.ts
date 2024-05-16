@@ -32,3 +32,13 @@ export class ClientInfoDto {
   os: string;
   loginLocation: string;
 }
+
+
+export class MyDto{
+  @ApiProperty({
+    required: true,
+  })
+  @IsString()
+  @Length(2, 10)
+  '属性？': string;
+}
