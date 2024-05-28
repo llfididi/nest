@@ -7,10 +7,10 @@ import { BaseEntity } from 'src/common/entities/base';
 })
 export class SysDeptEntity extends BaseEntity {
   @ApiProperty({ type: String, description: '部门ID' })
-  @PrimaryGeneratedColumn({ name: 'dept_id', comment: '部门ID' })
+  @PrimaryGeneratedColumn({ type: 'int', name: 'dept_id', comment: '部门ID' })
   public deptId: number;
 
-  @ApiProperty({ type: Number, description: '父部门ID' })
+  @ApiProperty({ type: String, description: '父部门ID' })
   @Column({ type: 'int', name: 'parent_id', default: 0, comment: '父部门ID' })
   public parentId: number;
 

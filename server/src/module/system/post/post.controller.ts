@@ -57,7 +57,7 @@ export class PostController {
   })
   @Delete(':id')
   remove(@Param('id') ids: string) {
-    const menuIds = ids.split(',').map((id) => +id);
+    const menuIds = ids.split(',').map((id) => id);
     return this.postService.remove(menuIds);
   }
 }

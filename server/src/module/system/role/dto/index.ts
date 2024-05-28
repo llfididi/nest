@@ -72,7 +72,7 @@ export class UpdateRoleDto extends CreateRoleDto {
   @ApiProperty({
     required: true,
   })
-  @IsNumberString()
+  @IsNumber()
   roleId: number;
 }
 
@@ -80,7 +80,7 @@ export class ChangeStatusDto {
   @ApiProperty({
     required: true,
   })
-  @IsNumberString()
+  @IsNumber()
   roleId: number;
 
   @ApiProperty({ required: true })
@@ -115,13 +115,13 @@ export class AuthUserCancelDto {
   @ApiProperty({
     required: true,
   })
-  @IsNumberString()
+  @IsNumber()
   roleId: number;
 
   @ApiProperty({
     required: true,
   })
-  @IsNumberString()
+  @IsNumber()
   userId: number;
 }
 
@@ -129,8 +129,8 @@ export class AuthUserCancelAllDto {
   @ApiProperty({
     required: true,
   })
-  @IsNumberString()
-  roleId: string;
+  @IsNumber()
+  roleId: number;
 
   @ApiProperty({
     required: true,
@@ -143,8 +143,8 @@ export class AuthUserSelectAllDto {
   @ApiProperty({
     required: true,
   })
-  @IsNumberString()
-  roleId: string;
+  @IsNumber()
+  roleId: number;
 
   @ApiProperty({
     required: true,

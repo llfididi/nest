@@ -59,7 +59,7 @@ export class DictController {
     summary: '字典类型-详情',
   })
   @Get('/type/:id')
-  findOneType(@Param('id') id: number) {
+  findOneType(@Param('id') id: string) {
     return this.dictService.findOneType(+id);
   }
 

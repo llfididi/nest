@@ -43,12 +43,12 @@ export class CreateUserDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsArray()
-  postIds?: Array<string>;
+  postIds?: Array<number>;
 
   @ApiProperty({ required: false })
   @IsOptional()
   @IsArray()
-  roleIds?: Array<string>;
+  roleIds?: Array<number>;
 
   @ApiProperty({ required: false })
   @IsOptional()
@@ -78,7 +78,7 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @ApiProperty({
     required: true,
   })
-  @IsNumberString()
+  @IsNumber()
   userId: number;
 }
 
@@ -86,7 +86,7 @@ export class ChangeStatusDto {
   @ApiProperty({
     required: true,
   })
-  @IsNumberString()
+  @IsNumber()
   userId: number;
 
   @ApiProperty({ required: true })
@@ -135,7 +135,7 @@ export class ResetPwdDto {
   @ApiProperty({
     required: true,
   })
-  @IsNumberString()
+  @IsNumber()
   userId: number;
 
   @ApiProperty({
@@ -160,6 +160,6 @@ export class AllocatedListDto extends PagingDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsString()
-  roleId?: number;
+  @IsNumberString()
+  roleId?: string;
 }

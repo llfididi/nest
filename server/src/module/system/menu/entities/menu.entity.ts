@@ -1,11 +1,17 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { BaseEntity } from 'src/common/entities/base';
+class NewBaseEntity extends BaseEntity {
+  constructor() {
+    super();
+    delete this.delFlag;
+  }
+}
 
 @Entity('sys_menu', {
   comment: '菜单权限表',
 })
-export class SysMenuEntity extends BaseEntity {
+export class SysMenuEntity extends NewBaseEntity {
   @ApiProperty({ type: String, description: '菜单ID' })
   @PrimaryGeneratedColumn({ type: 'int', name: 'menu_id', comment: '菜单ID' })
   public menuId: number;

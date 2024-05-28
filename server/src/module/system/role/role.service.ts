@@ -71,10 +71,10 @@ export class RoleService {
     });
   }
 
-  async findOne(id: number) {
+  async findOne(roleId: number) {
     const res = await this.sysRoleEntityRep.findOne({
       where: {
-        roleId: id,
+        roleId: roleId,
         delFlag: '0',
       },
     });
@@ -151,9 +151,9 @@ export class RoleService {
     return ResultData.ok(res);
   }
 
-  async remove(ids: number[]) {
+  async remove(roleIds: number[]) {
     const data = await this.sysRoleEntityRep.update(
-      { roleId: In(ids) },
+      { roleId: In(roleIds) },
       {
         delFlag: '1',
       },
@@ -161,7 +161,7 @@ export class RoleService {
     return ResultData.ok(data);
   }
 
-  async deptTree(id: number) {
+  async deptTree(roleId: number) {
     const res = await this.sysDeptEntityRep.find({
       where: {
         delFlag: '0',
@@ -173,7 +173,7 @@ export class RoleService {
       (m) => m.deptName,
     );
     const deptIds = await this.sysRoleWithDeptEntityRep.find({
-      where: { roleId: id },
+      where: { roleId: roleId },
       select: ['deptId'],
     });
     const checkedKeys = deptIds.map((item) => {

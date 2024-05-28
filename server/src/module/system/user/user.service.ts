@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { RedisService } from 'src/module/redis/redis.service';
+import * as bcrypt from 'bcrypt';
 
 import { ListToTree, GetNowDate, GenerateUUID, Uniq } from 'src/common/utils/index';
 import { CacheEnum, DelFlagEnum, StatusEnum, DataScopeEnum } from 'src/common/enum/index';
@@ -45,12 +46,17 @@ export class UserService {
    */
   async create(createUserDto: CreateUserDto) {
     const loginDate = GetNowDate();
+
+    if (createUserDto.password) {
+      createUserDto.password = await bcrypt.hashSync(createUserDto.password, bcrypt.genSaltSync(10));
+    }
+
     const res = await this.userRepo.save({ ...createUserDto, loginDate, userType: SYS_USER_TYPE.CUSTOM });
     const postEntity = this.sysUserWithPostEntityRep.createQueryBuilder('postEntity');
     const postValues = createUserDto.postIds.map((id) => {
       return {
         userId: res.userId,
-        postId: +id,
+        postId: id,
       };
     });
     postEntity.insert().values(postValues).execute();
@@ -59,7 +65,7 @@ export class UserService {
     const roleValues = createUserDto.roleIds.map((id) => {
       return {
         userId: res.userId,
-        roleId: +id,
+        roleId: id,
       };
     });
     roleEntity.insert().values(roleValues).execute();
@@ -162,11 +168,11 @@ export class UserService {
     });
   }
 
-  async findOne(id: number) {
+  async findOne(userId: number) {
     const data = await this.userRepo.findOne({
       where: {
         delFlag: '0',
-        userId: id,
+        userId: userId,
       },
     });
 
@@ -180,7 +186,7 @@ export class UserService {
 
     const postList = await this.sysUserWithPostEntityRep.find({
       where: {
-        userId: id,
+        userId: userId,
       },
     });
     const postIds = postList.map((item) => item.postId);
@@ -190,7 +196,7 @@ export class UserService {
       },
     });
 
-    const roleIds = await this.getRoleIds([id]);
+    const roleIds = await this.getRoleIds([userId]);
     const allRoles = await this.roleService.findRoles({
       where: {
         delFlag: '0',
@@ -232,7 +238,7 @@ export class UserService {
       const postValues = updateUserDto.postIds.map((id) => {
         return {
           userId: updateUserDto.userId,
-          postId: +id,
+          postId: id,
         };
       });
       postEntity.insert().values(postValues).execute();
@@ -255,7 +261,7 @@ export class UserService {
       const roleValues = updateUserDto.roleIds.map((id) => {
         return {
           userId: updateUserDto.userId,
-          roleId: +id,
+          roleId: id,
         };
       });
       roleEntity.insert().values(roleValues).execute();
@@ -266,6 +272,7 @@ export class UserService {
     delete (updateUserDto as any).roles;
     delete (updateUserDto as any).roleIds;
     delete (updateUserDto as any).postIds;
+
     //更新用户信息
     const data = await this.userRepo.update({ userId: updateUserDto.userId }, updateUserDto);
     return ResultData.ok(data);
@@ -277,15 +284,12 @@ export class UserService {
   async login(user: LoginDto, clientInfo: ClientInfoDto) {
     const data = await this.userRepo.findOne({
       where: {
-        userName:user.username,
-        password: user.password,
+        userName: user.username,
       },
-      select: ['userId'],
+      select: ['userId', 'password'],
     });
 
-    console.log(data);
-
-    if (!data) {
+    if (!(data && bcrypt.compareSync(user.password, data.password))) {
       return ResultData.fail(500, `帐号或密码错误`);
     }
 
@@ -298,6 +302,16 @@ export class UserService {
       return ResultData.fail(500, `您已被停用，如需正常使用请联系管理员`);
     }
 
+    const loginDate = new Date();
+    await this.userRepo.update(
+      {
+        userId: data.userId,
+      },
+      {
+        loginDate: loginDate,
+      },
+    );
+
     const uuid = GenerateUUID();
     const token = this.createToken({ uuid: uuid, userId: userData.userId });
     const permissions = await this.getUserPermissions(userData.userId);
@@ -309,13 +323,12 @@ export class UserService {
     });
 
     userData['deptName'] = deptData.deptName || '';
-    const loginTime = GetNowDate();
     const roles = userData.roles.map((item) => item.roleKey);
     const metaData = {
       browser: clientInfo.browser,
       ipaddr: clientInfo.ipaddr,
       loginLocation: clientInfo.loginLocation,
-      loginTime: loginTime,
+      loginTime: loginDate,
       os: clientInfo.os,
       permissions: permissions,
       roles: roles,
@@ -325,7 +338,7 @@ export class UserService {
       username: userData.userName,
       deptId: userData.deptId,
     };
-    await this.redisService.storeSet(`${CacheEnum.LOGIN_TOKEN_KEY}${uuid}`, metaData, LOGIN_TOKEN_EXPIRESIN);
+    await this.redisService.set(`${CacheEnum.LOGIN_TOKEN_KEY}${uuid}`, metaData, LOGIN_TOKEN_EXPIRESIN);
     return ResultData.ok(
       {
         token,
@@ -357,7 +370,7 @@ export class UserService {
    */
   async getUserPermissions(userId: number) {
     // 超级管理员
-    if (Number(userId) === 1) {
+    if (userId === 1) {
       return ['*:*:*'];
     }
     const roleIds = await this.getRoleIds([userId]);
@@ -461,10 +474,15 @@ export class UserService {
    * @returns
    */
   async resetPwd(body: ResetPwdDto) {
+    if (body.userId === 1) {
+      return ResultData.fail(500, '系统用户不能重置密码');
+    }
+    if (body.password) {
+      body.password = await bcrypt.hashSync(body.password, bcrypt.genSaltSync(10));
+    }
     await this.userRepo.update(
       {
-        userId: +body.userId,
-        userType: Not(SYS_USER_TYPE.SYS),
+        userId: body.userId,
       },
       {
         password: body.password,
@@ -494,7 +512,7 @@ export class UserService {
    * @param id
    * @returns
    */
-  async authRole(id: number) {
+  async authRole(userId: number) {
     const allRoles = await this.roleService.findRoles({
       where: {
         delFlag: '0',
@@ -504,7 +522,7 @@ export class UserService {
     const user = await this.userRepo.findOne({
       where: {
         delFlag: '0',
-        userId: id,
+        userId: userId,
       },
     });
 
@@ -516,7 +534,7 @@ export class UserService {
     });
     user['dept'] = dept;
 
-    const roleIds = await this.getRoleIds([id]);
+    const roleIds = await this.getRoleIds([userId]);
     //TODO flag用来给前端表格标记选中状态，后续优化
     user['roles'] = allRoles.filter((item) => {
       if (roleIds.includes(item.roleId)) {
@@ -557,7 +575,7 @@ export class UserService {
       const roleValues = roleIds.map((id) => {
         return {
           userId: query.userId,
-          roleId: +id,
+          roleId: id,
         };
       });
       roleEntity.insert().values(roleValues).execute();
@@ -607,7 +625,7 @@ export class UserService {
   async allocatedList(query: AllocatedListDto) {
     const roleWidthRoleList = await this.sysUserWithRoleEntityRep.find({
       where: {
-        roleId: query.roleId,
+        roleId: +query.roleId,
       },
       select: ['userId'],
     });
@@ -647,7 +665,7 @@ export class UserService {
   async unallocatedList(query: AllocatedListDto) {
     const roleWidthRoleList = await this.sysUserWithRoleEntityRep.find({
       where: {
-        roleId: query.roleId,
+        roleId: +query.roleId,
       },
       select: ['userId'],
     });
@@ -695,7 +713,7 @@ export class UserService {
    * @returns
    */
   async authUserCancelAll(data: AuthUserCancelAllDto) {
-    const userIds = data.userIds.split(',');
+    const userIds = data.userIds.split(',').map((id) => +id);
     await this.sysUserWithRoleEntityRep.delete({
       userId: In(userIds),
       roleId: +data.roleId,

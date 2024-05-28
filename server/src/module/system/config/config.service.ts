@@ -48,10 +48,10 @@ export class ConfigService {
     });
   }
 
-  async findOne(id: number) {
+  async findOne(configId: number) {
     const data = await this.sysConfigEntityRep.findOne({
       where: {
-        configId: id,
+        configId: configId,
       },
     });
     return ResultData.ok(data);
@@ -65,7 +65,7 @@ export class ConfigService {
    */
   async findOneByconfigKey(configKey: string) {
     // 尝试从Redis缓存中获取配置信息
-    const cacheData = await this.redisService.storeGet(`${CacheEnum.SYS_CONFIG_KEY}${configKey}`);
+    const cacheData = await this.redisService.get(`${CacheEnum.SYS_CONFIG_KEY}${configKey}`);
     if (cacheData) {
       // 如果缓存中存在配置信息，则直接返回
       return ResultData.ok(cacheData);
@@ -78,7 +78,7 @@ export class ConfigService {
       },
     });
     // 将从数据库中查询到的配置信息存入Redis缓存
-    await this.redisService.storeSet(`${CacheEnum.SYS_CONFIG_KEY}${configKey}`, data);
+    await this.redisService.set(`${CacheEnum.SYS_CONFIG_KEY}${configKey}`, data.configValue);
     return ResultData.ok(data);
   }
 
@@ -92,13 +92,36 @@ export class ConfigService {
     return ResultData.ok();
   }
 
-  async remove(ids: number[]) {
+  async remove(configIds: number[]) {
+    const list = await this.sysConfigEntityRep.find({
+      where: {
+        configId: In(configIds),
+        delFlag: '0',
+      },
+      select: ['configType', 'configKey'],
+    });
+    const item = list.find((item) => item.configType === 'Y');
+    if (item) {
+      return ResultData.fail(500, `内置参数【${item.configKey}】不能删除`);
+    }
     const data = await this.sysConfigEntityRep.update(
-      { configId: In(ids) },
+      { configId: In(configIds) },
       {
         delFlag: '1',
       },
     );
     return ResultData.ok(data);
+  }
+
+  async refreshCache() {
+    const list = await this.sysConfigEntityRep.find({
+      where: {
+        delFlag: '0',
+      },
+    });
+    list.forEach((item) => {
+      this.redisService.set(`${CacheEnum.SYS_CONFIG_KEY}${item.configKey}`, item.configValue);
+    });
+    return ResultData.ok();
   }
 }

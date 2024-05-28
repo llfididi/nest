@@ -21,8 +21,8 @@ export class DictService {
     return ResultData.ok();
   }
 
-  async deleteType(ids: number[]) {
-    await this.sysDictTypeEntityRep.update({ dictId: In(ids) }, { delFlag: '1' });
+  async deleteType(dictIds: number[]) {
+    await this.sysDictTypeEntityRep.update({ dictId: In(dictIds) }, { delFlag: '1' });
     return ResultData.ok();
   }
 
@@ -60,10 +60,10 @@ export class DictService {
     });
   }
 
-  async findOneType(id: number) {
+  async findOneType(dictId: number) {
     const data = await this.sysDictTypeEntityRep.findOne({
       where: {
-        dictId: id,
+        dictId: dictId,
         delFlag: '0',
       },
     });
@@ -85,8 +85,8 @@ export class DictService {
     return ResultData.ok();
   }
 
-  async deleteDictData(id: number) {
-    await this.sysDictDataEntityRep.update({ dictCode: id }, { delFlag: '1' });
+  async deleteDictData(dictId: number) {
+    await this.sysDictDataEntityRep.update({ dictCode: dictId }, { delFlag: '1' });
     return ResultData.ok();
   }
 
@@ -135,7 +135,7 @@ export class DictService {
     // });
 
     // 尝试从Redis缓存中获取字典数据
-    let data = await this.redisService.storeGet(`${CacheEnum.SYS_DICT_KEY}${dictType}`);
+    let data = await this.redisService.get(`${CacheEnum.SYS_DICT_KEY}${dictType}`);
 
     if (data) {
       // 如果缓存中存在，则直接返回缓存数据
@@ -151,7 +151,7 @@ export class DictService {
     });
 
     // 将查询到的数据存入Redis缓存，并返回数据
-    await this.redisService.storeSet(`${CacheEnum.SYS_DICT_KEY}${dictType}`, data);
+    await this.redisService.set(`${CacheEnum.SYS_DICT_KEY}${dictType}`, data);
     return ResultData.ok(data);
   }
 

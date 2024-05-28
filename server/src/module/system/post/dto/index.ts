@@ -39,7 +39,7 @@ export class UpdatePostDto extends CreatePostDto {
   @ApiProperty({
     required: true,
   })
-  @IsNumberString()
+  @IsNumber()
   postId: number;
 }
 
