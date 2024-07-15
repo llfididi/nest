@@ -17,11 +17,9 @@
 					<el-table-column label="Java类型" min-width="11%">
 						<template slot-scope="scope">
 							<el-select v-model="scope.row.javaType">
-								<el-option label="Long" value="Long" />
+								<el-option label="Number" value="Number" />
 								<el-option label="String" value="String" />
-								<el-option label="Integer" value="Integer" />
-								<el-option label="Double" value="Double" />
-								<el-option label="BigDecimal" value="BigDecimal" />
+								<el-option label="BigInt" value="BigInt" />
 								<el-option label="Date" value="Date" />
 								<el-option label="Boolean" value="Boolean" />
 							</el-select>
@@ -149,7 +147,7 @@ export default {
 		if (tableId) {
 			// 获取表详细信息
 			getGenTable(tableId).then((res) => {
-				this.columns = res.data.rows;
+				this.columns = res.data.info.columns;
 				this.info = res.data.info;
 				this.tables = res.data.tables;
 			});
@@ -173,12 +171,6 @@ export default {
 				if (validateResult) {
 					const genTable = Object.assign({}, basicForm.model, genForm.model);
 					genTable.columns = this.columns;
-					genTable.params = {
-						treeCode: genTable.treeCode,
-						treeName: genTable.treeName,
-						treeParentCode: genTable.treeParentCode,
-						parentMenuId: genTable.parentMenuId,
-					};
 					updateGenTable(genTable).then((res) => {
 						this.$modal.msgSuccess(res.msg);
 						if (res.code === 200) {

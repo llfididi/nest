@@ -1,6 +1,5 @@
 import * as Lodash from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
-
 import dayjs from 'dayjs';
 import isLeapYear from 'dayjs/plugin/isLeapYear'; // 导入插件
 import timezone from 'dayjs/plugin/timezone'; // 导入插件
@@ -54,6 +53,16 @@ export function ListToTree(arr, getId, getLabel) {
  */
 export function GetNowDate() {
   return dayjs().format('YYYY-MM-DD HH:mm:ss');
+}
+
+/**
+ * 时间格式化
+ * @param date
+ * @param format
+ * @returns
+ */
+export function FormatDate(date: Date, format = 'YYYY-MM-DD HH:mm:ss') {
+  return date && dayjs(date).format(format);
 }
 
 /**

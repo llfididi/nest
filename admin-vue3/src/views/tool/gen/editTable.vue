@@ -24,14 +24,12 @@
             min-width="10%"
             :show-overflow-tooltip="true"
           />
-          <el-table-column label="Java类型" min-width="11%">
+          <el-table-column label="java类型" min-width="11%">
             <template #default="scope">
               <el-select v-model="scope.row.javaType">
-                <el-option label="Long" value="Long" />
+                <el-option label="Number" value="Number" />
                 <el-option label="String" value="String" />
-                <el-option label="Integer" value="Integer" />
-                <el-option label="Double" value="Double" />
-                <el-option label="BigDecimal" value="BigDecimal" />
+                <el-option label="BigInt" value="BigInt" />
                 <el-option label="Date" value="Date" />
                 <el-option label="Boolean" value="Boolean" />
               </el-select>
@@ -151,12 +149,6 @@ function submitForm() {
     if (validateResult) {
       const genTable = Object.assign({}, info.value);
       genTable.columns = columns.value;
-      genTable.params = {
-        treeCode: info.value.treeCode,
-        treeName: info.value.treeName,
-        treeParentCode: info.value.treeParentCode,
-        parentMenuId: info.value.parentMenuId
-      };
       updateGenTable(genTable).then(res => {
         proxy.$modal.msgSuccess(res.msg);
         if (res.code === 200) {
@@ -185,7 +177,7 @@ function close() {
   if (tableId) {
     // 获取表详细信息
     getGenTable(tableId).then(res => {
-      columns.value = res.data.rows;
+      columns.value = res.data.info.columns;
       info.value = res.data.info;
       tables.value = res.data.tables;
     });
